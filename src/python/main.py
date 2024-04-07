@@ -117,7 +117,7 @@ def main():
 	fin_backtrack = time.time()
 	tiempo_backtrack = fin_backtrack - inicio_backtrack
 	print(tiempo_backtrack)
-
+	#Manu trolo
 
 
 	best = {}
