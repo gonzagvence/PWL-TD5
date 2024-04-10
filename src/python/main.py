@@ -15,7 +15,7 @@ def main():
 	K = instance["n"]
 	m = 6
 	n = 6
-	N = 5
+	N = 5 # Tome N como numero de Breakpoints
 	
 	# Ejemplo para definir una grilla de m x n.
 	grid_x = np.linspace(min(instance["x"]), max(instance["x"]), num=m, endpoint=True)
