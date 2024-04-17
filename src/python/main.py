@@ -7,7 +7,7 @@ BIG_NUMBER = 1e10 # Revisar si es necesario.
 def main():
 
 	# Ejemplo para leer una instancia con json
-	instance_name = "titanium.json"
+	instance_name = "aspen_simulation.json"
 	filename = "././data/" + instance_name
 	with open(filename) as f:
 		instance = json.load(f)
@@ -52,20 +52,6 @@ def main():
 		sub_Y = y[indice_inferior:indice_superior] # Generamos subconjunto de y respecto al subconjunto de x
 		return sub_X, sub_Y # Retornamos ambos subconjuntos
 
-	def estimar_error_y_pd(sol,x , y ,memo): #Calcula el valor de la recta
-		key = tuple(sol)
-		if key in memo:
-			return memo[key], memo
-		i = 0  # Establecemos i = 0
-		error = 0 # Establecemos error = 0 para sumar cada error del tramo
-		while i < (len(sol) - 1): # Desde i=0 hasta sol-1 (ya que tomamos el valor i e i+1 de la sol)
-			sub_x, sub_y = subconjunto(x, y, sol[i][0], sol[i+1][0]) # Generamos subconjunto de X e Y correspondiente al tramo
-			sub_x = np.array(sub_x) # Convertimos a Array de numpy
-			prediccion = f_en_tramo(sol[i][0], sol[i][1], sol[i+1][0], sol[i+1][1], sub_x) # Calculamos la estimación para cada punto
-			error = error + calcular_error(prediccion,sub_y) # Calculamos el error de ese tramo y sumamos al anterior
-			i = i + 1 #Pasamos de valor de i
-		memo[key] = error
-		return error, memo # Retornamos la suma de errores
 	#--------------------------------------------------------------------------------------------------------------------
 	
 	#-- FUERZA BRUTA ----------------------------------------------------------------------------------------------------
@@ -127,7 +113,7 @@ def main():
 		return  sol_global
 
 	inicio_backtrack = time.time()
-	print('Backtracking: ',backtracking(grid_x,grid_y,x,y,5,sol))
+	print('Backtracking: ',backtracking(grid_x,grid_y,x,y,6,sol))
 	fin_backtrack = time.time()
 	tiempo_backtrack = fin_backtrack - inicio_backtrack
 	print(tiempo_backtrack)
@@ -136,65 +122,44 @@ def main():
 		matriz = [[[{'error':1e10, 'puntos':[(None,None),(None, None)]} for _ in range(Z)] for _ in range(M)] for _ in range(N)]
 		return matriz
 	
-	def prog_dinamica(grid_x,grid_y,x,y,N ,sol_parcial):
+	def prog_dinamica(grid_x, grid_y, x, y, N):
+		N = N - 1
 		Z = len(grid_x)
 		M = len(grid_y)
-		memoria = make_cube(N, M, Z)
+		memoria = make_cube(N,Z,M)
 		x0 = grid_x[0]
-		i = 0
-		p = 0
-		k = 1
-		while k < Z:
-			while i < M:
-				while p < M:
-					if(memoria[0][p][k]['error'] > estimar_error_y([(x0,grid_y[i]),(grid_x[k],grid_y[p])], x, y)):
-						memoria[0][p][k] = {'error':estimar_error_y([(x0,grid_y[i]),(grid_x[k],grid_y[p])], x, y),'puntos':[(x0,grid_y[i]),(grid_x[k],grid_y[p])]}
-					p = p + 1
-				p = 0
-				i = i + 1
-			k = k + 1
-			i = 0
-		i = 1
-		p = 0
-		k = 2
-		l = 0
-		t = 0
-		while i < N:
-			while k < Z:
-				while p < M:
-					while l < k:
-						while t < M:
-							error = memoria[i-1][t][l]['error'] 
-							if(memoria[i][p][k]['error'] > error):
-								error = memoria[i-1][t][l]['error'] + estimar_error_y([(grid_x[l],grid_y[t]), (grid_x[k],grid_y[p])], x, y)
-								if(memoria[i][p][k]['error'] > error):
-									memoria[i][p][k]['error'] = error
-									puntos = memoria[i-1][t][l]['puntos']
-									puntos.append((grid_x[k],grid_y[p]))
-									memoria[i][p][k]['puntos'] = puntos.copy()
+		for k in range(1,Z):
+			for i in range(M):
+				for p in range(M):
+					if memoria[0][k][p]['error'] > estimar_error_y([(x0, grid_y[i]), (grid_x[k], grid_y[p])], x, y):
+						memoria[0][k][p] = {'error': estimar_error_y([(x0, grid_y[i]), (grid_x[k], grid_y[p])], x, y),'puntos': [(x0, grid_y[i]), (grid_x[k], grid_y[p])]}
+		for i in range(1,N):
+			for k in range(2,Z):
+				for p in range(M):
+					for l in range(k):
+						for t in range(M):
+							error = memoria[i - 1][l][t]['error']
+							if(memoria[i][k][p]['error'] > error):
+								error = memoria[i - 1][l][t]['error'] + estimar_error_y([(grid_x[l], grid_y[t]), (grid_x[k], grid_y[p])], x, y)
+								if(memoria[i][k][p]['error'] > error):
+									memoria[i][k][p]['error'] = error
+									puntos = memoria[i - 1][l][t]['puntos']
+									puntos.append((grid_x[k], grid_y[p]))
+									memoria[i][k][p]['puntos'] = puntos.copy()
 									puntos.pop()
-							t = t + 1
-						l = l + 1
-						t = 0
-					p = p + 1
-					l = 0
-				k = k + 1
-				p = 0
-			i = i + 1
-			k = 2
-
+		diccionario_menor_error = min(memoria[N - 1][Z - 1], key=lambda x: x["error"])
+		return diccionario_menor_error
 		
-		return memoria[N-1]
-	
-	
-	#inicio_progri = time.time()
-	#print(prog_dinamica(grid_x,grid_y,x,y,5,sol))
-	#fin_progri = time.time()
-	#tiempo_progri = fin_progri - inicio_progri
-	#print(tiempo_progri)
+
+	inicio_progri = time.time()
+	print('Programación Dinámica: ' , prog_dinamica(grid_x,grid_y,x,y,4))
+	fin_progri = time.time()
+	tiempo_progri = fin_progri - inicio_progri
+	print(tiempo_progri)
 
 
 	#----------------
+	''' # Experimentando nuestras primeras soluciones
 	def prog_dinamica_(grid_x,grid_y,x,y,N):
 		N = N-1
 		Z = len(grid_x)
@@ -252,49 +217,9 @@ def main():
 	fin_progri = time.time()
 	tiempo_progri = fin_progri - inicio_progri
 	print(tiempo_progri)
-
-
-
-
-
-
- 
+	'''
 	#----------------
 
-
-
-	def progra(grid_x, grid_y, x, y, N, sol_parcial, memo):
-		if(len(grid_x) < N - (len(sol_parcial)) ): #Caso base de grilla con menos de los necesarios
-			return {'error':1e10}, memo
-		
-		elif(len(sol_parcial) == N): # Si el largo de la solucion es el necesario
-			error_actual, memo = estimar_error_y_pd(sol_parcial, x, y, memo)
-			return {'error':error_actual,'puntos':sol_parcial.copy()}, memo
-		else:
-			sol_global = {'error':1e10}
-			if(N - (len(sol_parcial)) == 1): # Si queda un solo valor de sol, tiene que ser el ultimo x de la grilla
-				grid_x = [grid_x[-1]] # Hacemos que grid_x solo sea ese valor
-			for i in grid_y: # Recorremos la grilla en Y
-				sol_parcial.append((grid_x[0], i)) # Sumamos valores de Y
-				if(estimar_error_y_pd(sol_parcial, x, y, memo)[0] < sol_global['error']):
-					parcial, memo = progra(grid_x[1:], grid_y, x, y, N, sol_parcial, memo) # Evaluamos en ese valor de Y
-					if(parcial['error'] < sol_global['error']): # Evaluamos error ultima iteracion es mejor o peor y remplazamos
-						sol_global = parcial
-				sol_parcial.pop() # Quitamos para seguir probando con el resto
-			if(len(sol_parcial) > 0): # Si la sol_parcial no es 0 (es decir, ya se agrego x1) puedo ir evaluando opciones salteando valores de x
-				parcial, memo = progra(grid_x[1:], grid_y, x, y, N, sol_parcial, memo)
-			if(parcial['error'] < sol_global['error']): # Si tienen mejor error, remplazo
-				sol_global = parcial
-		return  sol_global, memo
-	memi = {}
-	
-
-
-	inicio_progri = time.time()
-	print('Programacion Dinámica Top Down: ',progra(grid_x,grid_y,x,y,5,sol, memi)[0])
-	fin_progri = time.time()
-	tiempo_progri = fin_progri - inicio_progri
-	print(tiempo_progri)
 	best = {}
 	best['sol'] = [None]*(N+1)
 	best['obj'] = BIG_NUMBER
