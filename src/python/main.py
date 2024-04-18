@@ -301,6 +301,21 @@ def main():
 		print('Brute Force: ',fuerza_bruta(grid_x_6,grid_y_6,x,y,3,sol))
 		print('Backtracking: ',backtracking(grid_x_6,grid_y_6,x,y,3,sol))
 		print('Programación Dinámica: ' , prog_dinamica(grid_x_6,grid_y_6,x,y,3))
+		#----------------------------------------
+		print('----Probamos aumentar mucho el tamaño de grilla y número de breakpoints----')
+		print('----Set de Datos 1: Titanium----')
+		instance_name = "titanium.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Grillas de Tamaño 20 y 10 Breakpoints:')
+		grid_x_20 = np.linspace(min(instance["x"]), max(instance["x"]), num=20, endpoint=True)
+		grid_y_20 = np.linspace(min(instance["y"]), max(instance["y"]), num=20, endpoint=True)
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_20,grid_y_20,x,y,10))
+		#---------------------------------
+
 		return
 	#Experimento 2: Performance.
 	#Queremos analizar que variables modifican el rendimiento de nuestros algoritmos. Para esta tarea, vamos a ir variando Tamaño de grilla, cantidad de breakpoints, lenguajes y algoritmos para medir su tiempo de cómputo
@@ -460,7 +475,7 @@ def main():
 		fin = time.time()
 		print('Programación Dinámica: ' , fin-inicio, ' segundos')
 		return
-	exp2()
+	exp1()
 
 
 
