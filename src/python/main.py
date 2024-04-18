@@ -2,20 +2,19 @@ import json
 import numpy as np
 import time
 
-BIG_NUMBER = 1e10 # Revisar si es necesario.
 
 def main():
 
 	# Ejemplo para leer una instancia con json
-	instance_name = "aspen_simulation.json"
+	instance_name = "optimistic_instance.json"
 	filename = "././data/" + instance_name
 	with open(filename) as f:
 		instance = json.load(f)
 	
 	K = instance["n"]
-	m = 6
-	n = 6
-	N = 5 # Tome N como numero de Breakpoints
+	m = 5
+	n = 5
+	N = 3 # Tome N como numero de Breakpoints
 	
 	# Ejemplo para definir una grilla de m x n.
 	grid_x = np.linspace(min(instance["x"]), max(instance["x"]), num=m, endpoint=True)
@@ -47,6 +46,8 @@ def main():
 	
 	def subconjunto(x,y,x0,x1):
 		sub_X = [x_i for x_i in x if x0 <= x_i <= x1] # Generamos subconjunto de x entre X_0 y X_1
+		if(sub_X==[]): # Casos vacios
+			return [],[]
 		indice_inferior = x.index(sub_X[0]) # Conseguimos indice inferior
 		indice_superior = indice_inferior + len(sub_X) # De igual manera para el indice Superior
 		sub_Y = y[indice_inferior:indice_superior] # Generamos subconjunto de y respecto al subconjunto de x
@@ -83,7 +84,7 @@ def main():
 		return  sol_global
 	
 	inicio_fuerzabruta = time.time()
-	print('Brute Force ',fuerza_bruta(grid_x,grid_y,x,y,5,sol))
+	print('Brute Force ',fuerza_bruta(grid_x,grid_y,x,y,N,sol))
 	fin_fuerzabruta = time.time()
 	tiempo_fuerzabruta = fin_fuerzabruta - inicio_fuerzabruta
 	print(tiempo_fuerzabruta)
@@ -113,7 +114,7 @@ def main():
 		return  sol_global
 
 	inicio_backtrack = time.time()
-	print('Backtracking: ',backtracking(grid_x,grid_y,x,y,6,sol))
+	print('Backtracking: ',backtracking(grid_x,grid_y,x,y,N,sol))
 	fin_backtrack = time.time()
 	tiempo_backtrack = fin_backtrack - inicio_backtrack
 	print(tiempo_backtrack)
@@ -123,7 +124,7 @@ def main():
 		return matriz
 	
 	def prog_dinamica(grid_x, grid_y, x, y, N):
-		N = N - 1
+		N = N - 1 
 		Z = len(grid_x)
 		M = len(grid_y)
 		memoria = make_cube(N,Z,M)
@@ -152,7 +153,7 @@ def main():
 		
 
 	inicio_progri = time.time()
-	print('Programación Dinámica: ' , prog_dinamica(grid_x,grid_y,x,y,4))
+	print('Programación Dinámica: ' , prog_dinamica(grid_x,grid_y,x,y,N))
 	fin_progri = time.time()
 	tiempo_progri = fin_progri - inicio_progri
 	print(tiempo_progri)
@@ -218,32 +219,261 @@ def main():
 	tiempo_progri = fin_progri - inicio_progri
 	print(tiempo_progri)
 	'''
+	print('-------------------------------------')
 	#----------------
+	#Experimento 1: Como varía la calidad de la predicción a medida que aumentamos el tamaño de grilla o cantidad de Breakpoints.
+	# Vamos a probar si a mayor número de breakpoints y/o mayor tamaño de grilla hay mejores predicciones:
+	def exp1():
+		print('Experimento Número 1: Calidad de Predicción')
+		print('----Set de Datos 1: Titanium----')
+		instance_name = "titanium.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 6 y 5 Breakpoints:')
+		grid_x_6 = np.linspace(min(instance["x"]), max(instance["x"]), num=6, endpoint=True)
+		grid_y_6 = np.linspace(min(instance["y"]), max(instance["y"]), num=6, endpoint=True)
+		print('Brute Force: ',fuerza_bruta(grid_x_6,grid_y_6,x,y,5,sol))
+		print('Backtracking: ',backtracking(grid_x_6,grid_y_6,x,y,5,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_6,grid_y_6,x,y,5))
+		grid_x_8 = np.linspace(min(instance["x"]), max(instance["x"]), num=8, endpoint=True)
+		grid_y_8 = np.linspace(min(instance["y"]), max(instance["y"]), num=8, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 8 y 6 Breakpoints:')
+		print('Brute Force: ',fuerza_bruta(grid_x_8,grid_y_8,x,y,6,sol))
+		print('Backtracking: ',backtracking(grid_x_8,grid_y_8,x,y,6,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_8,grid_y_8,x,y,6))
+		print('----Set de Datos 2: Aspen----')
+		instance_name = "aspen_simulation.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 5 y 3 Breakpoints:')
+		grid_x_5 = np.linspace(min(instance["x"]), max(instance["x"]), num=5, endpoint=True)
+		grid_y_5 = np.linspace(min(instance["y"]), max(instance["y"]), num=5, endpoint=True)
+		print('Brute Force: ',fuerza_bruta(grid_x_5,grid_y_5,x,y,3,sol))
+		print('Backtracking: ',backtracking(grid_x_5,grid_y_5,x,y,3,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_5,grid_y_5,x,y,3))
+		grid_x_6 = np.linspace(min(instance["x"]), max(instance["x"]), num=6, endpoint=True)
+		grid_y_6 = np.linspace(min(instance["y"]), max(instance["y"]), num=6, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 6 y 4 Breakpoints:')
+		print('Brute Force: ',fuerza_bruta(grid_x_6,grid_y_6,x,y,4,sol))
+		print('Backtracking: ',backtracking(grid_x_6,grid_y_6,x,y,4,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_6,grid_y_6,x,y,4))
+		print('----Set de Datos 3: Ethanol----')
+		instance_name = "ethanol_water_vle.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 6 y 5 Breakpoints:')
+		grid_x_6 = np.linspace(min(instance["x"]), max(instance["x"]), num=6, endpoint=True)
+		grid_y_6 = np.linspace(min(instance["y"]), max(instance["y"]), num=6, endpoint=True)
+		print('Brute Force: ',fuerza_bruta(grid_x_6,grid_y_6,x,y,5,sol))
+		print('Backtracking: ',backtracking(grid_x_6,grid_y_6,x,y,5,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_6,grid_y_6,x,y,5))
+		grid_x_7 = np.linspace(min(instance["x"]), max(instance["x"]), num=7, endpoint=True)
+		grid_y_7 = np.linspace(min(instance["y"]), max(instance["y"]), num=7, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 7 y 6 Breakpoints:')
+		print('Brute Force: ',fuerza_bruta(grid_x_7,grid_y_7,x,y,6,sol))
+		print('Backtracking: ',backtracking(grid_x_7,grid_y_7,x,y,6,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_7,grid_y_7,x,y,6))
+		print('----Set de Datos 4: Optimistic----')
+		instance_name = "optimistic_instance.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 5 y 3 Breakpoints:')
+		grid_x_5 = np.linspace(min(instance["x"]), max(instance["x"]), num=5, endpoint=True)
+		grid_y_5 = np.linspace(min(instance["y"]), max(instance["y"]), num=5, endpoint=True)
+		print('Brute Force: ',fuerza_bruta(grid_x_5,grid_y_5,x,y,3,sol))
+		print('Backtracking: ',backtracking(grid_x_5,grid_y_5,x,y,3,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_5,grid_y_5,x,y,3))
+		grid_x_6 = np.linspace(min(instance["x"]), max(instance["x"]), num=6, endpoint=True)
+		grid_y_6 = np.linspace(min(instance["y"]), max(instance["y"]), num=6, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 6 y 3 Breakpoints:')
+		print('Brute Force: ',fuerza_bruta(grid_x_6,grid_y_6,x,y,3,sol))
+		print('Backtracking: ',backtracking(grid_x_6,grid_y_6,x,y,3,sol))
+		print('Programación Dinámica: ' , prog_dinamica(grid_x_6,grid_y_6,x,y,3))
+		return
+	#Experimento 2: Performance.
+	#Queremos analizar que variables modifican el rendimiento de nuestros algoritmos. Para esta tarea, vamos a ir variando Tamaño de grilla, cantidad de breakpoints, lenguajes y algoritmos para medir su tiempo de cómputo
+	def exp2():
+		print('Experimento Número 2: Perfomance')
+		print('----Set de Datos 1: Titanium----')
+		instance_name = "titanium.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 6 y 5 Breakpoints:')
+		grid_x_6 = np.linspace(min(instance["x"]), max(instance["x"]), num=6, endpoint=True)
+		grid_y_6 = np.linspace(min(instance["y"]), max(instance["y"]), num=6, endpoint=True)
+		inicio = time.time()
+		fuerza_bruta(grid_x_6,grid_y_6,x,y,5,sol)
+		fin = time.time()
+		print('Brute Force: ',fin-inicio, ' segundos')
+		inicio = time.time()
+		backtracking(grid_x_6,grid_y_6,x,y,5,sol)
+		fin = time.time()
+		print('Backtracking: ',fin-inicio, ' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_6,grid_y_6,x,y,5)
+		fin = time.time()
+		print('Programación Dinámica: ' ,fin-inicio, ' segundos' )
+		#----------------------------------------------------------
+		grid_x_8 = np.linspace(min(instance["x"]), max(instance["x"]), num=8, endpoint=True)
+		grid_y_8 = np.linspace(min(instance["y"]), max(instance["y"]), num=8, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 8 y 6 Breakpoints:')
+		inicio = time.time()
+		fuerza_bruta(grid_x_8,grid_y_8,x,y,6,sol)
+		fin = time.time()
+		print('Brute Force: ',fin-inicio,' segundos')
+		inicio = time.time()
+		backtracking(grid_x_8,grid_y_8,x,y,6,sol)
+		fin = time.time()
+		print('Backtracking: ',fin-inicio,' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_8,grid_y_8,x,y,6)
+		fin = time.time()
+		print('Programación Dinámica: ' ,fin-inicio,' segundos' )
+		#-----------------------------------------------------------
+		print('----Set de Datos 2: Aspen----')
+		instance_name = "aspen_simulation.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 5 y 3 Breakpoints:')
+		grid_x_5 = np.linspace(min(instance["x"]), max(instance["x"]), num=5, endpoint=True)
+		grid_y_5 = np.linspace(min(instance["y"]), max(instance["y"]), num=5, endpoint=True)
+		inicio = time.time()
+		fuerza_bruta(grid_x_5,grid_y_5,x,y,3,sol)
+		fin = time.time()
+		print('Brute Force: ',fin-inicio,' segundos')
+		inicio = time.time()
+		backtracking(grid_x_5,grid_y_5,x,y,3,sol)
+		fin = time.time()
+		print('Backtracking: ',fin-inicio, ' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_5,grid_y_5,x,y,3)
+		fin = time.time()
+		print('Programación Dinámica: ' , fin-inicio, ' segundos')
+		#-----------------------------------------------------------
+		grid_x_9 = np.linspace(min(instance["x"]), max(instance["x"]), num=9, endpoint=True)
+		grid_y_9 = np.linspace(min(instance["y"]), max(instance["y"]), num=9, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 9 y 3 Breakpoints:')
+		inicio = time.time()
+		fuerza_bruta(grid_x_9,grid_y_9,x,y,3,sol)
+		fin = time.time()
+		print('Brute Force: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		backtracking(grid_x_9,grid_y_9,x,y,3,sol)
+		fin = time.time()
+		print('Backtracking: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_9,grid_y_9,x,y,3)
+		fin = time.time()
+		print('Programación Dinámica: ' , fin-inicio, ' segundos')
+		print('----Set de Datos 3: Ethanol----')
+		instance_name = "ethanol_water_vle.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 4 y 4 Breakpoints:')
+		grid_x_4 = np.linspace(min(instance["x"]), max(instance["x"]), num=4, endpoint=True)
+		grid_y_4 = np.linspace(min(instance["y"]), max(instance["y"]), num=4, endpoint=True)
+		inicio = time.time()
+		fuerza_bruta(grid_x_4,grid_y_4,x,y,4,sol)
+		fin = time.time()
+		print('Brute Force: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		backtracking(grid_x_4,grid_y_4,x,y,4,sol)
+		fin = time.time()
+		print('Backtracking: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_4,grid_y_4,x,y,4)
+		fin = time.time()
+		print('Programación Dinámica: ' , fin-inicio, ' segundos' )
+		#-----------------------------------------------------------
+		grid_x_7 = np.linspace(min(instance["x"]), max(instance["x"]), num=7, endpoint=True)
+		grid_y_7 = np.linspace(min(instance["y"]), max(instance["y"]), num=7, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 7 y 7 Breakpoints:')
+		inicio = time.time()
+		fuerza_bruta(grid_x_7,grid_y_7,x,y,7,sol)
+		fin = time.time()
+		print('Brute Force: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		backtracking(grid_x_7,grid_y_7,x,y,7,sol)
+		fin = time.time()
+		print('Backtracking: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_7,grid_y_7,x,y,7)
+		fin = time.time()
+		print('Programación Dinámica: ' , fin-inicio, ' segundos')
+		print('----Set de Datos 4: Optimistic----')
+		instance_name = "optimistic_instance.json"
+		filename = "././data/" + instance_name
+		with open(filename) as f:
+			instance = json.load(f)
+		x = instance['x']
+		y = instance['y']
+		print('Primero, con Grillas de Tamaño 3 y 2 Breakpoints:')
+		grid_x_3 = np.linspace(min(instance["x"]), max(instance["x"]), num=3, endpoint=True)
+		grid_y_3 = np.linspace(min(instance["y"]), max(instance["y"]), num=3, endpoint=True)
+		inicio = time.time()
+		fuerza_bruta(grid_x_3,grid_y_3,x,y,2,sol)
+		fin = time.time()
+		print('Brute Force: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		backtracking(grid_x_3,grid_y_3,x,y,2,sol)
+		fin = time.time()
+		print('Backtracking: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_3,grid_y_3,x,y,2)
+		fin = time.time()
+		print('Programación Dinámica: ' , fin-inicio, ' segundos' )
+		#-----------------------------------------------------------
+		grid_x_10 = np.linspace(min(instance["x"]), max(instance["x"]), num=10, endpoint=True)
+		grid_y_10 = np.linspace(min(instance["y"]), max(instance["y"]), num=10, endpoint=True)
+		print('Ahora, con Grillas de Tamaño 10 y 2 Breakpoints:')
+		inicio = time.time()
+		fuerza_bruta(grid_x_10,grid_y_10,x,y,2,sol)
+		fin = time.time()
+		print('Brute Force: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		backtracking(grid_x_10,grid_y_10,x,y,2,sol)
+		fin = time.time()
+		print('Backtracking: ', fin-inicio, ' segundos')
+		inicio = time.time()
+		prog_dinamica(grid_x_10,grid_y_10,x,y,2)
+		fin = time.time()
+		print('Programación Dinámica: ' , fin-inicio, ' segundos')
+		return
+	exp2()
 
-	best = {}
-	best['sol'] = [None]*(N+1)
-	best['obj'] = BIG_NUMBER
+
+
+
 	
-	# Posible ejemplo (para la instancia titanium) de formato de solucion, y como exportarlo a JSON.
-	# La solucion es una lista de tuplas (i,j), donde:
-	# - i indica el indice del punto de la discretizacion de la abscisa
-	# - j indica el indice del punto de la discretizacion de la ordenada.
-	best['sol'] = [(0, 0), (1, 0), (2, 0), (3, 2), (4, 0), (5, 0)]
-	best['obj'] = 5.927733333333339
-
-	# Represetnamos la solucion con un diccionario que indica:
-	# - n: cantidad de breakpoints
-	# - x: lista con las coordenadas de la abscisa para cada breakpoint
-	# - y: lista con las coordenadas de la ordenada para cada breakpoint
-	solution = {}
-	solution['n'] = len(best['sol'])
-	solution['x'] = [grid_x[x[0]] for x in best['sol']]
-	solution['y'] = [grid_y[x[1]] for x in best['sol']]
-	solution['obj'] = best['obj']
+	#-----------------
+	#Ejemplo de como guardamos y exportamos la solución:
+	best = prog_dinamica(grid_x,grid_y,x,y,N)
+	best['n'] = len(best['puntos'])
 
 	# Se guarda el archivo en formato JSON
-	with open('solution_' + instance_name, 'w') as f:
-		json.dump(solution, f)
+	with open('solucion_' + instance_name, 'w') as f:
+		json.dump(best, f)
 
 	
 if __name__ == "__main__":
