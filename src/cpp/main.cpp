@@ -8,7 +8,11 @@
 #include <ctime>
 
 using namespace std;
+
+// Para libreria de JSON.
+using namespace nlohmann;
 using json = nlohmann::json;
+
 
 struct Punto {
     double x;
@@ -16,14 +20,16 @@ struct Punto {
 };
 
 
-vector<double> f_en_tramo(double x0, double y0, double x1, double y1, const vector<double>& x) {
+vector<double> f_en_tramo(double x0, double y0, double x1, double y1, const vector<double>& x) { //Calcula el valor de la recta
     vector<double> prediccion;
     
-    double pendiente = (y1 - y0) / (x1 - x0);
+    double pendiente = (y1 - y0) / (x1 - x0); 
     
     for (double xi : x) {
         prediccion.push_back(pendiente * (xi - x0) + y0);
     }
+
+    //calcula la formula provista en el PDF
     
     return prediccion;
 }
@@ -32,7 +38,7 @@ vector<double> f_en_tramo(double x0, double y0, double x1, double y1, const vect
 
 // Función para estimar el error total de la recta
 
-double calcular_error(vector<double>& vector1, vector<double>& vector2) {
+double calcular_error(vector<double>& vector1, vector<double>& vector2) { //Tomo como entrada el vector predicción y vector 'y' reales
     if (vector1.size() != vector2.size()) { 
         cerr << "Error: los vectores tienen diferentes longitudes." << endl;
         return -1; 
@@ -40,9 +46,9 @@ double calcular_error(vector<double>& vector1, vector<double>& vector2) {
 
     double error = 0.0;
     for (size_t i = 0; i < vector1.size(); ++i) {
-        error += abs(vector1[i] - vector2[i]);
+        error += abs(vector1[i] - vector2[i]); //Calcula diferencia en valor absoluto de cada predicción y las vas sumando
     }
-    return error;
+    return error; //Retornamos suma de errores
 }
 
 pair<vector<double>, vector<double>> subconjunto(vector<double>& x, vector<double>& y, double x0, double x1) {
@@ -52,8 +58,8 @@ pair<vector<double>, vector<double>> subconjunto(vector<double>& x, vector<doubl
 
     
     // Generamos subconjunto de x entre x0 y x1
-    for (size_t i = 0; i < x.size(); ++i) {
-        if (x[i] >= x0 && x[i] <= x1) {
+    for (size_t i = 0; i < x.size(); ++i) {  
+        if (x[i] >= x0 && x[i] <= x1) { 
             sub_X.push_back(x[i]);
             if (sub_X.size() == 1) { // Guardamos el índice inferior
             indice_inferior = i;
@@ -78,43 +84,43 @@ pair<vector<double>, vector<double>> subconjunto(vector<double>& x, vector<doubl
 
 
 
-double estimar_error_y(const vector<pair<double, double>>& sol,vector<double>& x, vector<double>& y) {
-    double error = 0.0;
+double estimar_error_y(const vector<pair<double, double>>& sol,vector<double>& x, vector<double>& y) { //Calcula el valor de la recta
+    double error = 0.0; //Establecemos error = 0 para sumar cada error del tramo
     
-    for (size_t i = 0; i < sol.size() - 1; ++i) {
+    for (size_t i = 0; i < sol.size() - 1; ++i) { // Desde i=0 hasta sol-1 (ya que tomamos el valor i e i+1 de la sol)
         vector<double> sub_x, sub_y;
-        tie(sub_x, sub_y) = subconjunto(x, y, sol[i].first, sol[i + 1].first);
-        vector<double> sub_x_np(sub_x.begin(), sub_x.end());
-        vector<double> prediccion = f_en_tramo(sol[i].first, sol[i].second, sol[i + 1].first, sol[i + 1].second, sub_x_np);
-        error += calcular_error(prediccion, sub_y);
+        tie(sub_x, sub_y) = subconjunto(x, y, sol[i].first, sol[i + 1].first); //Generamos subconjunto de X e Y correspondiente al tramo
+        vector<double> sub_x_np(sub_x.begin(), sub_x.end()); // Convertimos a Array de "numpy"
+        vector<double> prediccion = f_en_tramo(sol[i].first, sol[i].second, sol[i + 1].first, sol[i + 1].second, sub_x_np); //Calculamos la estimación para cada punto
+        error += calcular_error(prediccion, sub_y); //Calculamos el error de ese tramo y sumamos al anterior
     }
     
-    return error;
+    return error; //Retornamos la suma de errores
 }
 
 pair<double, vector<pair<double, double>>> fuerza_bruta(vector<double>& grid_x, vector<double>& grid_y, vector<double>& x, vector<double>& y, size_t N, vector<pair<double, double>>& sol_parcial) {
-    if (grid_x.size() < N - sol_parcial.size()) {
+    if (grid_x.size() < N - sol_parcial.size()) {  //Caso base de grilla con menos de los necesarios
         return {numeric_limits<double>::max(), {}};
-    } else if (sol_parcial.size() == N) {
+    } else if (sol_parcial.size() == N) { //Si el largo de la solucion es el necesario
         double error_actual = estimar_error_y(sol_parcial, x, y);
         return {error_actual, sol_parcial};
     } else {
         pair<double, vector<pair<double, double>>> sol_global = {numeric_limits<double>::max(), {}};
-        if (N - sol_parcial.size() == 1) {
-            grid_x = {(grid_x.back())};
+        if (N - sol_parcial.size() == 1) { //Si queda un solo valor de sol, tiene que ser el ultimo x de la grilla
+            grid_x = {(grid_x.back())};  //Hacemos que grid_x solo sea ese valor
         }
         vector<double> grid_x_sliced = {grid_x.begin() + 1, grid_x.end()};
-        for (double i : grid_y) {
-            sol_parcial.push_back({grid_x[0], i});
-            auto parcial = fuerza_bruta(grid_x_sliced, grid_y, x, y, N, sol_parcial);
-            if (parcial.first < sol_global.first) {
+        for (double i : grid_y) {  //Recorremos la grilla en Y
+            sol_parcial.push_back({grid_x[0], i}); //Sumamos valores de Y
+            auto parcial = fuerza_bruta(grid_x_sliced, grid_y, x, y, N, sol_parcial); //Evaluamos en ese valor de Y
+            if (parcial.first < sol_global.first) { //Evaluamos error ultima iteracion es mejor o peor y remplazamos
                 sol_global = parcial;
             }
-            sol_parcial.pop_back();
+            sol_parcial.pop_back(); //Quitamos para seguir probando con el resto
         }
-        if (sol_parcial.size() > 0) {
+        if (sol_parcial.size() > 0) { //Si la sol_parcial no es 0 (es decir, ya se agrego x1) puedo ir evaluando opciones salteando valores de x
             auto parcial = fuerza_bruta(grid_x_sliced, grid_y, x, y, N, sol_parcial);
-            if (parcial.first < sol_global.first) {
+            if (parcial.first < sol_global.first) { //Si tienen mejor error, remplazo
                 sol_global = parcial;
             }
         }
@@ -125,31 +131,31 @@ pair<double, vector<pair<double, double>>> fuerza_bruta(vector<double>& grid_x, 
 
 
 pair<double, vector<pair<double, double>>> backtracking(vector<double>& grid_x, vector<double>& grid_y, vector<double>& x, vector<double>& y, size_t N, vector<pair<double, double>>& sol_parcial) {
-    if (grid_x.size() < N - sol_parcial.size()) {
+    if (grid_x.size() < N - sol_parcial.size()) { //Caso base de grilla con menos de los necesarios
         return {numeric_limits<double>::max(), {}};
-    } else if (sol_parcial.size() == N) {
+    } else if (sol_parcial.size() == N) {  //Si el largo de la solucion es el necesario
         double error_actual = estimar_error_y(sol_parcial, x, y);
         return {error_actual, sol_parcial};
     } else {
         pair<double, vector<pair<double, double>>> sol_global = {numeric_limits<double>::max(), {}};
-        if (N - sol_parcial.size() == 1) {
-            grid_x = {grid_x.back()};
+        if (N - sol_parcial.size() == 1) { //Si queda un solo valor de sol, tiene que ser el ultimo x de la grilla
+            grid_x = {grid_x.back()}; //Hacemos que grid_x solo sea ese valor
         }
         vector<double> grid_x_sliced = {grid_x.begin() + 1, grid_x.end()};
         for (double i : grid_y) {
-            sol_parcial.push_back({grid_x[0], i});
+            sol_parcial.push_back({grid_x[0], i}); //Sumamos valores de Y
 
             if (estimar_error_y(sol_parcial, x, y) < sol_global.first) {
-                auto parcial = backtracking(grid_x_sliced, grid_y, x, y, N, sol_parcial);
-                if (parcial.first < sol_global.first) {
+                auto parcial = backtracking(grid_x_sliced, grid_y, x, y, N, sol_parcial); //Evaluamos en ese valor de Y
+                if (parcial.first < sol_global.first) { //Evaluamos error ultima iteracion es mejor o peor y remplazamos
                     sol_global = parcial;
                 }
             }
-            sol_parcial.pop_back();
+            sol_parcial.pop_back(); //Quitamos para seguir probando con el resto
         }
-        if (sol_parcial.size() > 0) {
+        if (sol_parcial.size() > 0) { //Si la sol_parcial no es 0 (es decir, ya se agrego x1) puedo ir evaluando opciones salteando valores de x
             auto parcial = backtracking(grid_x_sliced, grid_y, x, y, N, sol_parcial);
-            if (parcial.first < sol_global.first) {
+            if (parcial.first < sol_global.first) { //Si tienen mejor error, remplazo
                 sol_global = parcial;
             }
         }
@@ -165,19 +171,19 @@ vector<vector<vector<pair<double, vector<Punto>>>>> make_cube(size_t N, size_t M
 }
 
 vector<Punto> prog_dinamica(vector<double>& grid_x, vector<double>& grid_y, vector<double>& x, vector<double>& y, size_t N) {
-    N = N - 1;
+    N = N - 1; //Seteamos N en N-1 ya que todos los algoritmos tomamos N como número de Breakpoints.
     size_t Z = grid_x.size();
     size_t M = grid_y.size();
-    auto memoria = make_cube(N, Z, M);
-    double x0 = grid_x[0];
+    auto memoria = make_cube(N, Z, M); //Realizamos un cubo de tamaño NxZxM para almacenar como memoria los resultados parciales
+    double x0 = grid_x[0]; //Guardamos primer valor de grilla de X para el 'caso base' de la P. Dinámica, donde buscaremos la mejor recta desde X0 Yi a Xj Yl
     size_t i = 0;
     size_t p = 0;
     size_t k = 1;
-    while (k < Z) {
-        while (i < M) {
+    while (k < Z) { //Iteramos grilla de X desde el 1 (ya que el 0 esta fijado en X0)
+        while (i < M) { //Iteramos 2 veces sobre grilla de Y para obtener todos los breakpoints posibles
             while (p < M) {
                 double error = estimar_error_y({{x0, grid_y[i]}, {grid_x[k], grid_y[p]}}, x, y);
-                if (memoria[0][k][p].first > error) {
+                if (memoria[0][k][p].first > error) {  //Si es menor al anterior guardado, remplazar
                     memoria[0][k][p] = {error, {{x0, grid_y[i]}, {grid_x[k], grid_y[p]}}};
                 }
                 ++p;
@@ -193,15 +199,15 @@ vector<Punto> prog_dinamica(vector<double>& grid_x, vector<double>& grid_y, vect
     k = 2;
     size_t l = 0;
     size_t t = 0;
-    while (i < N) {
-        while (k < Z) {
-            while (p < M) {
-                while (l < k) {
-                    while (t < M) {
-                        double error = memoria[i - 1][l][t].first;
+    while (i < N) { //Agarro desde '2 piezas' (i=1) para adelante, ya que los valores con 1 sola pieza los calcule en el caso base
+        while (k < Z) { //Tomo a partir de la tercer posicion (k=2) de la grilla de X ya que la de las segunda ya estan calculados
+            while (p < M) { //Itero sobre Grilla de y para probar todos los valores
+                while (l < k) { //Itero sobre rango de K, ya que l nunca puede ser mayor a k. Ya que se tiene que cumplir que los X sean crecientes
+                    while (t < M) { //Itero sobre grilla de y para tomar el segundo valor
+                        double error = memoria[i - 1][l][t].first; //Me guardo el error de ir hasta Xl Yt
                         if (memoria[i][k][p].first > error) {
-                            error += estimar_error_y({{grid_x[l], grid_y[t]}, {grid_x[k], grid_y[p]}}, x, y);
-                            if (memoria[i][k][p].first > error) {
+                            error += estimar_error_y({{grid_x[l], grid_y[t]}, {grid_x[k], grid_y[p]}}, x, y); //Guardamos error de ir Xk Yp como el anterior calculado más la suma de ir de ese a Xk Yp
+                            if (memoria[i][k][p].first > error) { //Remplazo solución si es mejor
                                 memoria[i][k][p] = {error, memoria[i - 1][l][t].second};
                                 memoria[i][k][p].second.push_back({grid_x[k], grid_y[p]});
                             }
@@ -222,7 +228,7 @@ vector<Punto> prog_dinamica(vector<double>& grid_x, vector<double>& grid_y, vect
     }
 
     auto it = min_element(memoria[N - 1][Z - 1].begin(), memoria[N - 1][Z - 1].end(),
-                          [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
+                          [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; }); //Devuelvo el mínimo error llegado la ultima posición de grilla de X, con los breakpoints que pedimos
     return it->second;
 }
 
@@ -230,8 +236,8 @@ vector<Punto> prog_dinamica(vector<double>& grid_x, vector<double>& grid_y, vect
 
 //.........Para.crear.grilla................//
 
-vector<double> gridmake(vector<double> lista, int m){
-    
+vector<double> gridmake(vector<double> lista, int m){  //funcion equivalente a linspace
+     
     vector <double> grilla;
     float min = *min_element(lista.begin(), lista.end());
     float max = *max_element(lista.begin(), lista.end());
@@ -449,8 +455,10 @@ void optimistic1(vector<pair<double, double>>& sol, size_t exp) {
     
 }
 
-
+// Experimento 1: Como varía la calidad de la predicción a medida que aumentamos el tamaño de grilla o cantidad de Breakpoints.
+// Vamos a probar si a mayor número de breakpoints y/o mayor tamaño de grilla hay mejores predicciones:
 void exp1() {
+
     vector<pair<double, double>> sol;
 
     cout << "-------------------------------------" << endl;
@@ -464,7 +472,8 @@ void exp1() {
     
 }
 
-
+// Experimento 2: Performance.
+// Queremos analizar que variables modifican el rendimiento de nuestros algoritmos. Para esta tarea, vamos a ir variando Tamaño de grilla, cantidad de breakpoints, lenguajes y algoritmos para medir su tiempo de cómputo
 void exp2() {
     vector<pair<double, double>> sol;
 
@@ -480,9 +489,6 @@ void exp2() {
 }
 
 
-
-// Para libreria de JSON.
-using namespace nlohmann;
 
 int main(int argc, char** argv) {
     string instance_name = "../../data/titanium.json";
